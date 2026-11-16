@@ -129,6 +129,9 @@ begin
   begin
     Exec('taskkill.exe', '/F /IM {#MyAppExeName}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Exec('schtasks.exe', '/Delete /F /TN "RemoteLAN_Autostart"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Firewall rules added by the app at startup (FirewallHelper.EnsureAgentPortsOpen)
+    Exec('netsh.exe', 'advfirewall firewall delete rule name="RemoteLAN Agent (TCP 9191)"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec('netsh.exe', 'advfirewall firewall delete rule name="RemoteLAN Discovery (UDP 9192)"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Sleep(1000);
   end;
 end;

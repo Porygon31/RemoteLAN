@@ -6,12 +6,12 @@ namespace RemoteLAN.Security;
 
 public static class FirewallHelper
 {
-    public static bool IsRulePresent(int port = 8443)
+    public static bool IsRulePresent(int port = 8443) => IsRuleNamePresent($"RemoteLAN WebBridge (TCP {port})");
+
+    private static bool IsRuleNamePresent(string ruleName)
     {
         try
         {
-            string ruleName = $"RemoteLAN WebBridge (TCP {port})";
-
             var checkPsi = new ProcessStartInfo
             {
                 FileName = "netsh",
@@ -33,26 +33,40 @@ public static class FirewallHelper
         }
     }
 
-    public static void EnsureWebBridgePortOpen(int port = 8443)
+    public static void EnsureWebBridgePortOpen(int port = 8443) =>
+        EnsureRule($"RemoteLAN WebBridge (TCP {port})", $"protocol=TCP localport={port} profile=any description=\"Allows incoming browser remote control via RemoteLAN WebBridge\"");
+
+    /// <summary>
+    /// Opens the session (TCP) and discovery (UDP) ports to the local subnet.
+    /// Without these rules a PC with Windows Firewall enabled is invisible and unreachable.
+    /// </summary>
+    public static void EnsureAgentPortsOpen(int tcpPort, int discoveryPort)
+    {
+        EnsureRule($"RemoteLAN Agent (TCP {tcpPort})",
+            $"protocol=TCP localport={tcpPort} remoteip=localsubnet profile=any description=\"Allows incoming RemoteLAN remote control sessions\"");
+        EnsureRule($"RemoteLAN Discovery (UDP {discoveryPort})",
+            $"protocol=UDP localport={discoveryPort} remoteip=localsubnet profile=any description=\"Allows RemoteLAN LAN auto-discovery\"");
+    }
+
+    private static void EnsureRule(string ruleName, string ruleSpec)
     {
         try
         {
-            if (IsRulePresent(port)) return;
+            if (IsRuleNamePresent(ruleName)) return;
 
             if (DesktopManager.IsAdministrator || DesktopManager.IsSystem)
             {
-                string ruleName = $"RemoteLAN WebBridge (TCP {port})";
                 var addPsi = new ProcessStartInfo
                 {
                     FileName = "netsh",
-                    Arguments = $"advfirewall firewall add rule name=\"{ruleName}\" dir=in action=allow protocol=TCP localport={port} profile=any description=\"Allows incoming browser remote control via RemoteLAN WebBridge\"",
+                    Arguments = $"advfirewall firewall add rule name=\"{ruleName}\" dir=in action=allow {ruleSpec}",
                     CreateNoWindow = true,
                     UseShellExecute = false
                 };
                 using var addProc = Process.Start(addPsi);
                 addProc?.WaitForExit(3000);
 
-                DiagnosticLogger.Log($"[FirewallHelper] Added inbound firewall rule for port {port} on all profiles.");
+                DiagnosticLogger.Log($"[FirewallHelper] Added inbound firewall rule '{ruleName}'.");
             }
         }
         catch (Exception ex)

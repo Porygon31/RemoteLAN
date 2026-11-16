@@ -159,6 +159,11 @@ public partial class App : Application
         // Auto-heal scheduled task if startup is enabled but scheduled task is missing
         Security.StartupHelper.EnsureStartupSynchronized();
 
+        // Off the UI thread: netsh calls take a few hundred milliseconds
+        _ = Task.Run(() => Security.FirewallHelper.EnsureAgentPortsOpen(
+            Protocol.Transport.ProtocolConstants.DefaultPort,
+            Protocol.Discovery.DiscoveryConstants.DiscoveryPort));
+
         bool startInBackground = _settings.StartMinimizedToTray || isBackgroundLaunch;
 
         // If running in headless server mode (boot supervisor/console-session, --server, or lock screen),

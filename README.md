@@ -81,6 +81,8 @@ RemoteLAN/
 
 ### Network Protocols
 
+On startup, RemoteLAN adds inbound Windows Firewall rules for TCP 9191 (`RemoteLAN Agent`) and UDP 9192 (`RemoteLAN Discovery`), restricted to the local subnet on all network profiles. Without them, a PC with the firewall enabled can neither be discovered nor controlled. The uninstaller removes both rules.
+
 #### 1. LAN Auto-Discovery (UDP Port 9192)
 - **Probe**: Broadcasts `REMOTELAN_DISCOVER_V1` across active local network subnets.
 - **Response**: Replies with `REMOTELAN_AGENT_V1|{MachineName}|{TcpPort}|{Version}|{MachineId}|{InterfaceType}|{AdapterIp}`.
