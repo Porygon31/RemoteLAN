@@ -9,6 +9,7 @@ using RemoteLAN.Input;
 using RemoteLAN.Network;
 using RemoteLAN.Rendering;
 using RemoteLAN.Protocol.Messages;
+using RemoteLAN.Recording;
 using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
 
@@ -30,6 +31,7 @@ public partial class SessionWindow : Window
     private bool _hasAutoUnlocked;
     private readonly ChatViewModel _chatViewModel = new();
     private readonly DispatcherTimer _typingHideTimer;
+    private volatile SessionRecorder? _recorder;
 
     public SessionWindow(ControllerClient client, string remoteDisplayName, string endpoint, Security.SettingsManager? settingsManager = null, string? targetIp = null, string? machineId = null)
     {
@@ -113,6 +115,61 @@ public partial class SessionWindow : Window
     private void Client_FrameReceived(byte[] jpegBytes)
     {
         _renderer.ProcessJpegFrame(jpegBytes);
+        _recorder?.AddFrame(jpegBytes);
+    }
+
+    private void RecordBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_recorder != null)
+        {
+            _recorder.Stop();
+            SetRecordButton("Saving...", Color.FromRgb(0xEF, 0x44, 0x44), Colors.White, isEnabled: false);
+            return;
+        }
+
+        try
+        {
+            // No "Save As" dialog or Explorer here: this window runs as SYSTEM, and they would hand a SYSTEM shell to the user
+            var recorder = new SessionRecorder(RecordingLocation.CreateOutputPath(_remoteDisplayName));
+            _recorder = recorder;
+            SetRecordButton("⏹ Stop Recording", Color.FromRgb(0xEF, 0x44, 0x44), Colors.White, isEnabled: true);
+            SessionStatusText.Text = $"Recording to {recorder.OutputPath}";
+            _ = TrackRecordingAsync(recorder);
+        }
+        catch (Exception ex)
+        {
+            SessionStatusText.Text = $"Recording failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>Single place that ends a recording in the UI: normal stop, encoder failure or session end.</summary>
+    private async Task TrackRecordingAsync(SessionRecorder recorder)
+    {
+        await _client.SendCursorCaptureAsync(true);
+
+        string status;
+        try
+        {
+            await recorder.Completion;
+            status = $"Recording saved: {recorder.OutputPath}";
+        }
+        catch (Exception ex)
+        {
+            status = $"Recording failed: {ex.Message}";
+        }
+
+        _recorder = null;
+        SetRecordButton("⏺ Record", Color.FromRgb(0xF1, 0xF5, 0xF9), Color.FromRgb(0x1E, 0x29, 0x3B), isEnabled: true);
+        SessionStatusText.Text = status;
+        await _client.SendCursorCaptureAsync(false);
+    }
+
+    private void SetRecordButton(string text, Color background, Color foreground, bool isEnabled)
+    {
+        RecordBtn.Content = text;
+        RecordBtn.Background = new SolidColorBrush(background);
+        RecordBtn.Foreground = new SolidColorBrush(foreground);
+        RecordBtn.IsEnabled = isEnabled;
     }
 
     private void Client_StateChanged(ControllerState state, string message)
@@ -125,7 +182,15 @@ public partial class SessionWindow : Window
             {
                 _isUserClosing = true;
                 SessionStatusText.Text = $"Session ended: {message}";
-                MessageBox.Show($"Remote session disconnected: {message}", "RemoteLAN Session", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                string details = message;
+                if (_recorder is { } recorder)
+                {
+                    recorder.Stop();
+                    details += $"\n\nThe recording is being saved to:\n{recorder.OutputPath}";
+                }
+
+                MessageBox.Show($"Remote session disconnected: {details}", "RemoteLAN Session", MessageBoxButton.OK, MessageBoxImage.Information);
                 Close();
             }
         });
@@ -854,6 +919,7 @@ public partial class SessionWindow : Window
     {
         _isUserClosing = true;
         _typingHideTimer.Stop();
+        _recorder?.Stop();
 
         // Unsubscribe chat events first to prevent any late-arriving messages
         // from re-entering Dispatcher after the window is closed.

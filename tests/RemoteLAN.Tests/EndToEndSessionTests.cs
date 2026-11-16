@@ -278,4 +278,43 @@ public class EndToEndSessionTests
             DesktopManager.MockIsLockScreenActive = null;
         }
     }
+
+    private static async Task<bool> WaitUntilAsync(Func<bool> condition)
+    {
+        for (int i = 0; i < 100 && !condition(); i++)
+        {
+            await Task.Delay(50);
+        }
+        return condition();
+    }
+
+    [Fact]
+    public async Task EndToEnd_CursorCapture_FollowsController_AndResetsForNextSession()
+    {
+        const int port = 9207;
+        using var agent = new AgentServer(port, initialPin: "334455");
+        agent.Start();
+
+        using (var recording = new ControllerClient())
+        {
+            await recording.ConnectAsync("127.0.0.1", port, pin: "334455");
+            Assert.False(agent.CursorCaptureEnabled);
+
+            await recording.SendCursorCaptureAsync(true);
+            Assert.True(await WaitUntilAsync(() => agent.CursorCaptureEnabled));
+
+            await recording.SendCursorCaptureAsync(false);
+            Assert.True(await WaitUntilAsync(() => !agent.CursorCaptureEnabled));
+
+            // Left on when the connection drops, as when a recording is cut off.
+            await recording.SendCursorCaptureAsync(true);
+            Assert.True(await WaitUntilAsync(() => agent.CursorCaptureEnabled));
+        }
+
+        Assert.True(await WaitUntilAsync(() => !agent.IsClientConnected));
+        using var next = new ControllerClient();
+        await next.ConnectAsync("127.0.0.1", port, pin: "334455");
+        Assert.Equal(ControllerState.Connected, next.State);
+        Assert.True(await WaitUntilAsync(() => !agent.CursorCaptureEnabled));
+    }
 }

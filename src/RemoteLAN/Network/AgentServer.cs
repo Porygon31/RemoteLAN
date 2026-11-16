@@ -20,6 +20,8 @@ public sealed class AgentServer : IDisposable
     private readonly PinManager _pinManager;
     private readonly IScreenCapturer _capturer;
     private readonly JpegFrameEncoder _encoder;
+    private readonly CursorOverlay _cursorOverlay = new();
+    private volatile bool _cursorCaptureEnabled;
     private readonly IInputInjector _inputInjector;
     private readonly NetworkFrameWriter _writer;
     private readonly AgentDiscoveryResponder _discoveryResponder;
@@ -40,6 +42,7 @@ public sealed class AgentServer : IDisposable
     public int ScreenWidth => _capturer.Width;
     public int ScreenHeight => _capturer.Height;
     public bool IsClientConnected => _currentClient?.Connected == true;
+    internal bool CursorCaptureEnabled => _cursorCaptureEnabled;
 
     public event Action<string>? StatusChanged;
     public event Action<string>? ClientConnected;
@@ -420,6 +423,9 @@ public sealed class AgentServer : IDisposable
             int sessionId = Interlocked.Increment(ref _sessionGeneration);
             _inputInjector.ResetSession(sessionId);
 
+            // A recording cut off with the previous viewer must not affect this one
+            _cursorCaptureEnabled = false;
+
             // Run Video Streaming and Input Receiving concurrently
             var streamTask = Task.Run(() => StreamScreenLoopAsync(networkStream, sessionCts), ct);
             var inputTask = Task.Run(() => ReceiveInputLoopAsync(networkStream, sessionCts), ct);
@@ -492,7 +498,7 @@ public sealed class AgentServer : IDisposable
                 var bitmap = _capturer.CaptureFrame();
                 if (bitmap != null)
                 {
-                    byte[] jpegData = _encoder.Encode(bitmap);
+                    byte[] jpegData = _encoder.Encode(_cursorCaptureEnabled ? _cursorOverlay.Compose(bitmap) : bitmap);
                     await _writer.WriteFrameAsync(stream, MessageType.ScreenFrame, jpegData, ct).ConfigureAwait(false);
                     frameCount++;
                 }
@@ -575,6 +581,10 @@ public sealed class AgentServer : IDisposable
                     case MessageType.UnlockWithOsPassword:
                         var unlockMsg = UnlockWithOsPasswordMessage.Deserialize(payload);
                         _ = Task.Run(() => DesktopManager.UnlockWithPassword(unlockMsg.Password));
+                        break;
+
+                    case MessageType.SetCursorCapture:
+                        _cursorCaptureEnabled = SetCursorCaptureMessage.Deserialize(payload).Enabled;
                         break;
 
                     case MessageType.ChatMessage:
@@ -662,6 +672,7 @@ public sealed class AgentServer : IDisposable
         _pinManager.UnattendedAccessChanged -= UpdateUnattendedPowerState;
         _discoveryResponder.Dispose();
         _capturer.Dispose();
+        _cursorOverlay.Dispose();
         _inputInjector.Dispose();
         _webBridgeServer?.Dispose();
     }

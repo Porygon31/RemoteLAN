@@ -1,5 +1,13 @@
 # Release Notes
 
+## [1.5.0] - 2026-11-03
+
+### Added
+- **Session Video Recording**: New `Record` button in the session window saves the remote screen as an H.264 MP4 (15 fps, no audio) in `Videos\RemoteLAN` of the signed-in user. While recording, the remote agent draws its real mouse cursor into the frames. Both PCs need this version for the cursor to appear.
+
+### Fixed
+- **LAN Discovery and Connections Blocked by Windows Firewall**: RemoteLAN now adds inbound rules for TCP 9191 and UDP 9192, restricted to the local subnet, at startup. Previously a PC with the firewall enabled could neither be discovered nor controlled. The uninstaller removes both rules.
+
 ## [1.4.0] - 2026-09-24
 
 RemoteLAN **v1.4.0** introduces **RemoteLAN WebBridge** — instant browser-based remote control of this PC from any smartphone, tablet, or browser over LAN with zero client app installations, zero-typing QR code pairing, direct mobile touchscreen and full-screen trackpad engines, modern Light Mode dropdown controls, and chat window lifecycle hardening.

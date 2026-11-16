@@ -21,6 +21,7 @@ public enum MessageType : byte
     SendCtrlAltDel = 0x35,
     PowerAction = 0x36,
     UnlockWithOsPassword = 0x37,
+    SetCursorCapture = 0x38,
 
     // Phase 4 — In-Session Ephemeral Chat
     ChatMessage = 0x40,

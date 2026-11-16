@@ -306,4 +306,20 @@ public class ChatMessageProtocolTests
         Assert.Equal((byte)0x40, (byte)RemoteLAN.Protocol.Messages.MessageType.ChatMessage);
         Assert.Equal((byte)0x41, (byte)RemoteLAN.Protocol.Messages.MessageType.ChatTypingIndicator);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SetCursorCaptureMessage_RoundTrips(bool enabled)
+    {
+        byte[] bytes = new SetCursorCaptureMessage { Enabled = enabled }.Serialize();
+
+        Assert.Equal(enabled, SetCursorCaptureMessage.Deserialize(bytes).Enabled);
+    }
+
+    [Fact]
+    public void SetCursorCaptureMessage_EmptyPayload_MeansDisabled()
+    {
+        Assert.False(SetCursorCaptureMessage.Deserialize([]).Enabled);
+    }
 }

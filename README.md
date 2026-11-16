@@ -1,6 +1,6 @@
 # RemoteLAN
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://semver.org)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://semver.org)
 [![Downloads](https://img.shields.io/github/downloads/salmanasmat/RemoteLAN/total.svg)](https://github.com/salmanasmat/RemoteLAN/releases)
 [![Target](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078d4.svg)](https://www.microsoft.com/windows)
@@ -23,6 +23,7 @@ A high-performance, custom, LAN-only remote desktop tool for internal office use
   - **Controller Slide-Out Drawer**: Collapsible chat panel integrated directly into `SessionWindow` with unread message badges on the top toolbar and live typing indicators.
   - **Agent Floating Desktop Overlay (`HostChatWindow`)**: Unobtrusive, topmost, chromeless widget floating on the host PC desktop. Starts as a compact pill, expands on click or incoming message, supports dragging, and self-destructs on disconnect.
   - **Input Keyboard Isolation**: Complete focus separation ensuring keystrokes typed into chat inputs are never forwarded to the remote host machine.
+- **Session Video Recording**: The `⏺ Record` button in `SessionWindow` starts and stops an H.264 MP4 recording (15 fps, no audio) of the remote screen, encoded by Windows Media Foundation. While recording, the remote agent draws its real mouse cursor (position and shape) into the frames, so the cursor appears in the video. The remote PC needs this version for that; an older agent still produces a video, without the cursor. Files are saved to `Videos\RemoteLAN` of the signed-in user, and the remote user is not notified.
 - **System Tray Minimization**: Closing the application window (clicking 'X') hides RemoteLAN to the Windows System Tray notification area, keeping the agent server and discovery listening in the background.
 - **Clean Modern Light Mode UI**:
   - **Left Vertical Sidebar**: Displays This PC's identity, IP address, and alphanumeric session access code with one-click copy, regeneration, and custom code assignment, with a quick-access Settings launcher.
@@ -62,8 +63,8 @@ A high-performance, custom, LAN-only remote desktop tool for internal office use
   - **Apple Safari TLS & SAN Compliance**: Automatically generates and manages self-signed X.509 certificates with Subject Alternative Names (SAN) for all local IPv4 addresses and 365-day validity limits (complying strictly with Apple iOS 13+ / macOS 10.15+ TLS rules), plus one-tap `/cert` profile download.
   - **Windows Firewall Integration**: Automatically checks and configures inbound TCP firewall rules for port 8443 across all network profiles (including Public Wi-Fi) with one-click in-app elevation.
   - **Unified Security & Lockout**: Directly shares RemoteLAN's `PinManager` (PIN rotation & permanent unattended password) and `SettingsManager` brute-force lockout rules.
-- **About Section & Developer Credentials**: Built-in About view providing project details (v1.4.0, GPL-3.0 open source license, technical architecture) and developer credentials (**Salman Asmat**).
-- **Semantic Versioning**: Adheres strictly to [SemVer 2.0.0](https://semver.org) (Current version: `1.4.0`).
+- **About Section & Developer Credentials**: Built-in About view providing project details (v1.5.0, GPL-3.0 open source license, technical architecture) and developer credentials (**Salman Asmat**).
+- **Semantic Versioning**: Adheres strictly to [SemVer 2.0.0](https://semver.org) (Current version: `1.5.0`).
 
 ---
 
@@ -76,7 +77,7 @@ RemoteLAN/
 │   ├── RemoteLAN/                    # Primary Unified AnyDesk-style Application (Host + Client Viewport + WebBridge)
 │   └── RemoteLAN.Protocol/           # Shared wire protocol, framing, messages, discovery models
 └── tests/
-    └── RemoteLAN.Tests/              # Automated unit, discovery, security, power, input pipeline, and WebBridge test suite (125 tests)
+    └── RemoteLAN.Tests/              # Automated unit, discovery, security, power, input pipeline, and WebBridge test suite (149 tests)
 ```
 
 ### Network Protocols
@@ -107,6 +108,7 @@ All authentication, desktop video frames, and remote mouse/keyboard inputs multi
 - `0x35` — `SendCtrlAltDel` (Remote CAD / wake sign-in screen command)
 - `0x36` — `PowerAction` (Remote system Lock, Sleep, Restart, Shutdown)
 - `0x37` — `UnlockWithOsPassword` (Windows OS lock screen auto-unlock with hardware scan code keystroke injection)
+- `0x38` — `SetCursorCapture` (Draw the agent's mouse cursor into streamed frames while the viewer records)
 
 #### 3. WebBridge Browser Access (HTTPS / WSS Port 8443)
 - **HTTP GET `/` & `/index.html`**: Serves the touch-first responsive HTML5/JS single-page web client.
@@ -144,7 +146,7 @@ To compile and package the standalone Windows installer:
 ```
 
 The compiled installer is output to:
-`dist/RemoteLAN_Setup_v1.4.0.exe`
+`dist/RemoteLAN_Setup_v1.5.0.exe`
 
 - **Fully Self-Contained (.NET 8 Runtime Included)**: Bundles the complete .NET 8 desktop runtime and CoreCLR libraries directly inside the installer — no separate .NET installation or download required.
 - **Clean Upgrades**: Automatically terminates running processes, cleans old version binaries, and preserves user credentials in `%ProgramData%\RemoteLAN`.

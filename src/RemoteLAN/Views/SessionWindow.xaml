@@ -84,6 +84,9 @@
                                        Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                     </Grid>
+                    <Button x:Name="RecordBtn" Content="⏺ Record" Click="RecordBtn_Click" Padding="12,4" Focusable="False"
+                            ToolTip="Record this session to a video file, with the remote mouse cursor"
+                            Background="#F1F5F9" Foreground="#1E293B" BorderBrush="#CBD5E1" BorderThickness="1" Cursor="Hand" FontWeight="Medium" Margin="0,0,10,0"/>
                     <Button x:Name="ToggleFullscreenBtn" Content="Fullscreen" Click="ToggleFullscreenBtn_Click" Padding="12,4" Focusable="False"
                             Background="#F1F5F9" Foreground="#1E293B" BorderBrush="#CBD5E1" BorderThickness="1" Cursor="Hand" FontWeight="Medium" Margin="0,0,10,0"/>
                     <Button x:Name="DisconnectBtn" Content="Disconnect" Click="DisconnectBtn_Click" Padding="14,4" Focusable="False"
@@ -116,7 +119,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="SessionStatusText" Text="Connected • Low Latency Direct Socket Stream" FontSize="11" Foreground="#64748B" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="RemoteLAN v1.4.0" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="RemoteLAN v1.5.0" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 

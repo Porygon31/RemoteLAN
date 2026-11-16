@@ -8,7 +8,8 @@ We take the security of **RemoteLAN** seriously. This document outlines our secu
 
 | Version | Supported | Notes |
 | :--- | :---: | :--- |
-| **1.4.x** | 🟢 Yes | Active release branch (Current: v1.4.0) |
+| **1.5.x** | 🟢 Yes | Active release branch (Current: v1.5.0) |
+| **1.4.x** | 🔴 No | Superseded by v1.5.x |
 | **1.3.x** | 🔴 No | Superseded by v1.4.x |
 | **1.2.x** | 🔴 No | Superseded by v1.3.x |
 | **1.1.x** | 🔴 No | Superseded by v1.2.x |

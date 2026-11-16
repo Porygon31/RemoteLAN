@@ -253,6 +253,18 @@ public sealed class ControllerClient : IDisposable
         catch { }
     }
 
+    public async ValueTask SendCursorCaptureAsync(bool enabled)
+    {
+        if (State != ControllerState.Connected || _networkStream == null) return;
+
+        try
+        {
+            var msg = new SetCursorCaptureMessage { Enabled = enabled };
+            await _writer.WriteFrameAsync(_networkStream, MessageType.SetCursorCapture, msg.Serialize()).ConfigureAwait(false);
+        }
+        catch { }
+    }
+
     public async ValueTask SendUnlockWithOsPasswordAsync(string password)
     {
         if (State != ControllerState.Connected || _networkStream == null) return;
