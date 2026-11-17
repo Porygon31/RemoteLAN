@@ -21,6 +21,11 @@ public partial class App : Application
 
         Security.DiagnosticLogger.Log($"[App.OnStartup] Args: '{string.Join(" ", e.Args)}', Session: {System.Diagnostics.Process.GetCurrentProcess().SessionId}, User: {Environment.UserName}, IsAdmin: {Security.DesktopManager.IsAdministrator}, IsSystem: {Security.DesktopManager.IsSystem}");
 
+        if (Security.DesktopManager.IsAdministrator || Security.DesktopManager.IsSystem)
+        {
+            Security.DataFolderSecurity.Restrict(Security.DataFolderSecurity.DefaultDirectory);
+        }
+
         for (int i = 0; i < e.Args.Length; i++)
         {
             if (e.Args[i] == "--config" && i + 1 < e.Args.Length)

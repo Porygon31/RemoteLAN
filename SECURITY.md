@@ -41,7 +41,7 @@ We will acknowledge receipt of your report within 48 hours, investigate the issu
 | Category | Status | Notes |
 | :--- | :---: | :--- |
 | **Secrets & Keys** | 🟢 PASSED | Zero hardcoded secrets, private keys, or API tokens in codebase. |
-| **Credential Storage** | 🟡 WARNING | JSON configuration stored at `%ProgramData%\RemoteLAN\settings.json`; recommend DPAPI encryption at rest. |
+| **Credential Storage** | 🟡 WARNING | JSON configuration stored at `%ProgramData%\RemoteLAN\settings.json`; folder restricted to SYSTEM + Administrators. DPAPI encryption at rest still recommended. |
 | **Injection Vulnerabilities** | 🟢 PASSED | Safe typed enum protocol routing; hardened structured `ProcessStartInfo.ArgumentList` execution in `SystemPowerManager` and `StartupHelper`. |
 | **Authentication & AuthZ** | 🟢 PASSED | CSPRNG PIN generation, constant-time validation (`FixedTimeEquals`), IP lockout rate limiting. |
 | **Privilege Impersonation** | 🟢 PASSED | Strict RAII token impersonation (`ImpersonationScope`) with guaranteed `RevertToSelf()`. |
@@ -96,6 +96,7 @@ We will acknowledge receipt of your report within 48 hours, investigate the issu
 #### 6. Credential Storage at Rest
 * **Scan Result**: 🟡 **WARNING (Future Hardening Recommended)**
 * Configuration and credentials (unattended access password and saved remote device passwords) are stored in JSON at `%ProgramData%\RemoteLAN\settings.json`, partitioned and mapped by persistent Machine GUIDs.
+* The folder ACL is reset at every startup to SYSTEM + Administrators only (inheritance from `ProgramData` removed), so standard local accounts cannot read stored passwords or the WebBridge private key.
 * While the directory location allows seamless background operation across both pre-logon (SYSTEM) and user interactive sessions:
   - *Recommendation*: Encrypt stored passwords at rest using Windows Data Protection API (DPAPI: `ProtectedData.Protect`) to safeguard credentials against unauthorized local tools running on the workstation.
 

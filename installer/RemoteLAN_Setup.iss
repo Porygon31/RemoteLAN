@@ -44,7 +44,8 @@ Name: "autostart"; Description: "Start RemoteLAN automatically with Windows (in 
 Source: "..\bin\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Dirs]
-Name: "{commonappdata}\{#MyAppName}"; Permissions: users-full
+; No extra permissions: the app restricts this folder to SYSTEM + Administrators at startup (DataFolderSecurity)
+Name: "{commonappdata}\{#MyAppName}"
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"

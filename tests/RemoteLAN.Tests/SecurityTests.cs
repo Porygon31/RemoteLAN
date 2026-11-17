@@ -208,6 +208,48 @@ public class SecurityTests
         // If caught is null, then .NET 8 fully supports ArgumentList with UseShellExecute!
         Assert.Null(caught);
     }
+
+    [Fact]
+    public void DataFolderSecurity_Restrict_LeavesOnlySystemAndAdministrators()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "RemoteLAN_AclTest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string file = Path.Combine(dir, "settings.json");
+        File.WriteAllText(file, "{}");
+        try
+        {
+            // Simulate the old installer's "Users: full" grant on the file
+            var users = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinUsersSid, null);
+            var fs = new FileInfo(file).GetAccessControl();
+            fs.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(users, System.Security.AccessControl.FileSystemRights.FullControl, System.Security.AccessControl.AccessControlType.Allow));
+            new FileInfo(file).SetAccessControl(fs);
+
+            DataFolderSecurity.Restrict(dir);
+
+            var allowed = new[]
+            {
+                new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.LocalSystemSid, null),
+                new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid, null),
+            };
+            var dirSec = new DirectoryInfo(dir).GetAccessControl();
+            Assert.True(dirSec.AreAccessRulesProtected);
+            foreach (System.Security.AccessControl.FileSystemAccessRule r in dirSec.GetAccessRules(true, true, typeof(System.Security.Principal.SecurityIdentifier)))
+                Assert.Contains(r.IdentityReference, allowed);
+            foreach (System.Security.AccessControl.FileSystemAccessRule r in new FileInfo(file).GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.SecurityIdentifier)))
+                Assert.Contains(r.IdentityReference, allowed);
+        }
+        finally
+        {
+            // As owner we keep WRITE_DAC: give ourselves access back so a non-elevated runner can clean up.
+            var ds = new System.Security.AccessControl.DirectorySecurity();
+            ds.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(
+                System.Security.Principal.WindowsIdentity.GetCurrent().User!,
+                System.Security.AccessControl.FileSystemRights.FullControl,
+                System.Security.AccessControl.InheritanceFlags.ContainerInherit | System.Security.AccessControl.InheritanceFlags.ObjectInherit,
+                System.Security.AccessControl.PropagationFlags.None,
+                System.Security.AccessControl.AccessControlType.Allow));
+            new DirectoryInfo(dir).SetAccessControl(ds);
+            Directory.Delete(dir, true);
+        }
+    }
 }
-
-
